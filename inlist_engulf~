@@ -1,0 +1,40 @@
+
+! For the sake of future readers of this file (yourself included),
+! ONLY include the controls you are actually using.  DO NOT include
+! all of the other controls that simply have their default values.
+
+&star_job
+
+     load_saved_model = .true.
+     saved_model_name = '1msun_rg_3.mod'
+
+     pgstar_flag = .true.
+
+     set_initial_age = .true. 
+     initial_age = 0
+     set_initial_model_number = .true.
+     initial_model_number = 0
+     set_initial_dt = .true.
+     years_for_initial_dt = 15
+
+/ !end of star_job namelist
+
+
+&controls
+
+     initial_mass = 1 
+     use_other_energy = .true.
+  !  max_timestep = 1d9
+
+     x_ctrl(1) =  0.01 !0.2     ! Companion Mass (Msun)
+     x_ctrl(2) =  0.1 !0.27     ! Companion Radius (Rsun)
+     x_ctrl(3) = -10 ! 10.      ! Stop point for companion (Rsun). Set to < 0 if you do not want to use.
+     x_ctrl(4) = 0.1           ! Decrese timestep during grazing phase if (dr/r_influence) > this value  
+     x_ctrl(5) = 0.1           ! Decrese timestep during full engulfment if (dr/r_influence) > this value
+
+     photo_interval = 10
+     history_interval=1
+     max_num_profile_models = 100
+     min_timestep_limit = 1d-9
+
+/ ! end of controls namelist
