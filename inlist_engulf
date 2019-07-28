@@ -6,7 +6,7 @@
 &star_job
 
      load_saved_model = .true.
-     saved_model_name = '1msun_rg_10.mod'
+     saved_model_name = '1msun_rg_20.mod'
 
      pgstar_flag = .true.
 
@@ -26,8 +26,8 @@
      use_other_energy = .true.
   !  max_timestep = 1d9
 
-     x_ctrl(1) =  0.01 !0.2     ! Companion Mass (Msun)
-     x_ctrl(2) =  0.1 !0.27     ! Companion Radius (Rsun)
+     x_ctrl(1) =  0.001 !0.2     ! Companion Mass (Msun) 0.001Msun ~ Mj
+     x_ctrl(2) =  0.1 !0.27     ! Companion Radius (Rsun) 0.1Rsun ~ Rj
      x_ctrl(3) = -10 ! 10.      ! Stop point for companion (Rsun). Set to < 0 if you do not want to use.
      x_ctrl(4) = 0.1           ! Decrese timestep during grazing phase if (dr/r_influence) > this value  
      x_ctrl(5) = 0.1           ! Decrese timestep during full engulfment if (dr/r_influence) > this value
