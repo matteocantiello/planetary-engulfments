@@ -96,6 +96,7 @@
         real(dp) :: dmsum_companion,dmsum_bondi,dmsum_drag, de_heat
         real(dp) :: f_disruption
         real(dp) :: penetration_depth
+        real(dp) :: t_tide
         ierr = 0
 
       ! Reads model infos from star structure s. Initialize variables.
@@ -115,6 +116,9 @@
       ! Mass and radius of injested companion from inlist. Also include a stop point if you want to stop before destruction.
         M_companion = s% x_ctrl(1) * Msun
         R_companion = s% x_ctrl(2) * Rsun
+
+        call tidal_timescale(s% m(1), M_companion, s% r(1), R_companion, r_engulf, t_tide)
+        write(*,*) 'Tidal Timescale (yrs): ',t_tide/secyer
 
 
       ! r_engulf is the coordinate of the planet's center wrt the primary's core.
@@ -296,6 +300,22 @@
          ! use const_def, only: standard_cgrav
            v_kepler = sqrt(standard_cgrav*m1/r)
       end subroutine orbital_velocity
+
+      ! Calculate tidal timescale
+      ! This is a derivative of the equilibrium tide model of Hut 1981 formulated by Eggleton + 1998 (EKH)
+      ! In particular we use equation (5) from Hansen et al. 2010
+        subroutine tidal_timescale(m1, m2, r1, r2, a, t_tide)
+             real(dp), intent(in)  :: m1, m2, r1, r2, a
+             real(dp), intent(out) :: t_tide
+             real(dp) :: sigma, sigma_calibration
+           ! use const_def, only: standard_cgrav
+            sigma_calibration = 7.8d-8  ! Calibrated dissipation constant (Hansen et al. 2010)
+            sigma = 6.4d-59 * sigma_calibration ! Dimensional Scaling for dissipation constant (Hansen et al. 2010)
+
+            t_tide = (m1/9.0)/((m1+m2)*m2) * (a**8.0 / r1**10) / sigma
+            ! write(*,*) '(m1/9.0)/((m1+m2)*m2)' , t_tide
+        end subroutine tidal_timescale
+
 
       subroutine bondi_radius (m2, sound_speed, v, R_bondi)
            real(dp), intent(in)  :: m2, v, sound_speed
