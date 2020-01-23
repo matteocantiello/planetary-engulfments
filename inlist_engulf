@@ -38,7 +38,7 @@
      x_ctrl(7) = 1d-4          ! Max tolerance for da/a =  (dr/Orbital_separation) due to Tides
 
 
-     photo_interval = 10
+     photo_interval = 1000
     ! profile_interval = 1
      history_interval=1
      max_num_profile_models = 100
