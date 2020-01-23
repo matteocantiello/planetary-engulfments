@@ -24,18 +24,38 @@
 
      initial_mass = 1
      use_other_energy = .true.
+
+
+
     ! max_timestep = 1d10
 
      x_ctrl(1) =  0.001 ! 1.66e-7 !0.001 !0.2     ! Companion Mass (Msun) 0.001Msun ~ Mj ! Mercury mass = 0.055 Mearth , Mercury Radius = 0.38 Rearth (1.66 -7 Msun,
      x_ctrl(2) =  0.1 ! 0.0038 ! 0.1 !0.27     ! Companion Radius (Rsun) 0.1Rsun ~ Rj
      x_ctrl(3) = -10 ! 10.      ! Stop point for companion (Rsun). Set to < 0 if you do not want to use.
      x_ctrl(4) = 0.001           ! Decrese timestep during grazing phase if (dr/r_influence) > this value
-    x_ctrl(5) = 0.5           ! Decrese timestep during full engulfment if (dr/r_influence) > this value
+     x_ctrl(5) = 0.5           ! Decrese timestep during full engulfment if (dr/r_influence) > this value
+     x_ctrl(6) = 5             ! Initial orbital separation (a in Rsun)
+     x_ctrl(7) = 1d-4          ! Max tolerance for da/a =  (dr/Orbital_separation) due to Tides
+
 
      photo_interval = 10
     ! profile_interval = 1
      history_interval=1
      max_num_profile_models = 100
      min_timestep_limit = 1d-12
+
+  ! options for energy conservation (see MESA V, Section 3)
+ !    use_dedt_form_of_energy_eqn = .true.
+
+  ! Solver
+  !  varcontrol_target = 1d-3
+  !  use_gold_tolerances = .true.
+
+ !    min_timestep_limit = 1d-12
+
+  ! Mesh
+!    mesh_delta_coeff = 0.2
+!    max_allowed_nz = 16000
+
 
 / ! end of controls namelist

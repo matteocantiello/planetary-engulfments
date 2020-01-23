@@ -603,8 +603,19 @@
          call store_extra_info(s)
 
        ! Update the radial coordinate of the engulfed companion
+       if (s% use_other_energy) then
          Orbital_separation = max(Orbital_separation-Deltar-Deltar_tides, 0d0)
+       end if
 
+       ! Decrease timestep to fill da_tides/a tolerance
+       ! write(*,*) 'Tff: ', s% xtra9, 'Tolerance: ',s% x_ctrl(7) , 'Orbital Sep: ',Orbital_separation
+       !write(*,*) 'Deltar_tides/Orbital_separation',Deltar_tides/Orbital_separation,'Tolerance', s% x_ctrl(7)
+       !write(*,*) 'Dt, Dt_next', s% dt, s% dt_next
+       ! write(*,*) ' Deltar_tides/Orbital_separation > tolerance (Bad if > 1)', Deltar_tides/Orbital_separation, s% x_ctrl(7)
+       if (Deltar_tides/Orbital_separation >= s% x_ctrl(7)) then
+          s% dt_next = s% x_ctrl(7)* secyer * s% xtra9  ! Dt = tolerance * t_tide
+          write(*,*) 'TIDES SETTING DTNEXT: ', s% x_ctrl(7), s% xtra9, s% dt_next
+       end if
        ! CALCULATE R_influence AGAIN as it is not available to this part of the code
        ! But before we need bondi radius and orbital velocity.
        ! Calculate approx gridpoint location of planet center
@@ -631,7 +642,7 @@
           ! write(*,'(A,f10.4,A,f10.4,A,f10.4)') "Reached stop point from inlist. Orbital_separation=", Orbital_separation/Rsun, &
           !                                      'R_influence=',R_influence/Rsun, 'inslist stop:',s% x_ctrl(3)
            !extras_finish_step = terminate
-           s% use_other_energy = .false.
+           s% use_other_energy = .false. ! This also stops the tidal orbital evolution, since that's
            stop_age = s% star_age + 1d1 * s% kh_timescale
          endif
 
@@ -673,7 +684,7 @@
                s% dt_next = s% dt_next/2d0               ! There are better strategies, but this is simple enough
                call drag (s% m(k), s% x_ctrl(1)*Msun,area,s% rho(k),s% dt_next,s% r(k),delta_e,dr_next)
                write(*,*) s% model_number,&
-                         'Grazing dr/R_influence too large: ', dr_next/R_influence,'Decreasing timestep to ', s% dt_next
+                         'GRAZING ENGULFMENT SETTING DTNEXT: dr/R_influence too large: ', dr_next/R_influence,'Decreasing dt to ', s% dt_next
              end do
            else
              do while (dr_next/R_influence > s% x_ctrl(5))   ! or Full Engulfment (allow for larger dr)
@@ -681,7 +692,7 @@
                call drag (s% m(k), s% x_ctrl(1)*Msun,area,s% rho(k),s% dt_next,s% r(k),delta_e,dr_next)
                write(*,*) s% model_number,&
                          ! 'Engulfed dr/r_p too large: ', dr/(max(R_bondi,s% x_ctrl(2) * Rsun)),'Decreasing timestep to ', s% dt_next
-                         'Engulfed dr/R_influence too large: ', dr_next/R_influence,'Decreasing timestep to ', s% dt_next
+                         'ENGULFMENT SETTING DTNEXT: dr/R_influence too large: ', dr_next/R_influence,'Decreasing dt to ', s% dt_next
              end do
            end if
          end if
