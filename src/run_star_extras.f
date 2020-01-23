@@ -33,7 +33,7 @@
 
 
     ! These values can be saved in photos and restored at restarts
-      real(dp) :: r_engulf, Deltar, R_bondi, r_influence
+      real(dp) :: Orbital_separation, Deltar, Deltar_tides, R_bondi, R_influence
       real(dp) :: stop_age
 
     ! the routines that take care of doing the save/restore are the following:
@@ -91,7 +91,7 @@
         type (star_info), pointer :: s
         integer :: k, nz
         integer :: krr_center, krr_bottom_bondi, krr_top_bondi, krr_bottom_companion, krr_top_companion
-        real(dp) :: e_orbit, M_companion, R_companion, area, de, sound_speed, r_influence
+        real(dp) :: e_orbit, M_companion, R_companion, area, de, sound_speed, R_influence
         real(dp) :: rr, v_kepler, rho_bar_companion, rho_bar_bondi, rho_bar_drag
         real(dp) :: dmsum_companion,dmsum_bondi,dmsum_drag, de_heat
         real(dp) :: f_disruption
@@ -117,65 +117,65 @@
         M_companion = s% x_ctrl(1) * Msun
         R_companion = s% x_ctrl(2) * Rsun
 
-        call tidal_timescale(s% m(1), M_companion, s% r(1), R_companion, r_engulf, t_tide)
-        write(*,*) 'Tidal Timescale (yrs): ',t_tide/secyer
+        call tidal_timescale(s% m(1), M_companion, s% r(1), R_companion, Orbital_separation, t_tide)
+        Deltar_tides = (s% dt/t_tide) * Orbital_separation
+        write(*,*) 'Tidal Timescale (yrs): ',t_tide/secyer, 'Tidal Da (Rsun): ', Deltar_tides/Rsun
 
-
-      ! r_engulf is the coordinate of the planet's center wrt the primary's core.
-      ! If this is the beginning of an engulfment run, r_engulf is set to be the radius
+      ! Orbital_separation is the coordinate of the planet's center wrt the primary's core.
+      ! If this is the beginning of an engulfment run, Orbital_separation is set to be the radius
       ! of the star in 'extras_startup' plus either the radius of the companion or the bondi readius, whichever is
       ! largest, so as to initialize a grazing collision.
       ! If it's a restart, MESA will remember the radial location of the engulfed
-      ! companion, r_engulf, from a photo. This is because we are moving r_engulf data in
+      ! companion, Orbital_separation, from a photo. This is because we are moving Orbital_separation data in
       ! photos using 'move_extra_info' and this data is retrieved in 'extras_startup' using 'unpack_extra_info'
 
       ! Calculate orbital keplerian velocity of the companion (we assume circular orbits)
       ! If the companion's centre is outside the primary this is easyly done, but if it is inside, we need to use
       ! only the mass of the primary inside the orbit, so we need to locate the index where the companion core is.
       ! Calculate the bondi radius of the companion after ensuring the the sound speed is 10 km/s outside the star
-        if (r_engulf > s% r(1)) then
-            call orbital_velocity(s% m(1), r_engulf, v_kepler)
+        if (Orbital_separation > s% r(1)) then
+            call orbital_velocity(s% m(1), Orbital_separation, v_kepler)
             sound_speed = 10. * 1.d5 ! set c_sound to be ISM in cgs
         else
             krr_center=1
-            do while (krr_center >= 1 .and. krr_center < nz .and. s% r(krr_center) >= r_engulf)
+            do while (krr_center >= 1 .and. krr_center < nz .and. s% r(krr_center) >= Orbital_separation)
                 krr_center = krr_center + 1
             end do
-            call orbital_velocity(s% m(krr_center), r_engulf, v_kepler)
+            call orbital_velocity(s% m(krr_center), Orbital_separation, v_kepler)
             sound_speed = s% csound(krr_center)
         endif
 
         call bondi_radius (M_companion, sound_speed, v_kepler, R_bondi)
-        r_influence = max(R_bondi,R_companion)
+        R_influence = max(R_bondi,R_companion)
 
 
       ! Find gridpoint corresponding to the location of the engulfed companion bottom, center and top
         krr_bottom_companion=1
         do while (krr_bottom_companion >= 1 .and. &
                   krr_bottom_companion < nz .and. &
-                  s% r(krr_bottom_companion) >= r_engulf-R_companion)
+                  s% r(krr_bottom_companion) >= Orbital_separation-R_companion)
             krr_bottom_companion = krr_bottom_companion + 1
         end do
         krr_center = krr_bottom_companion
-        do while (krr_center >=2 .and. s% r(krr_center) < r_engulf)
+        do while (krr_center >=2 .and. s% r(krr_center) < Orbital_separation)
            krr_center = krr_center - 1
         end do
         krr_top_companion = krr_center
-        do while (krr_top_companion >= 2 .and. s% r(krr_top_companion) < r_engulf+R_companion)
+        do while (krr_top_companion >= 2 .and. s% r(krr_top_companion) < Orbital_separation+R_companion)
             krr_top_companion = krr_top_companion - 1
         end do
 
        ! Find gridpoint corresponding to the location of the engulfed companion's Bondi radius,  bottom, center and top
          krr_bottom_bondi=1
-         do while (krr_bottom_bondi >= 1 .and. krr_bottom_bondi < nz .and. s% r(krr_bottom_bondi) >= r_engulf-R_bondi)
+         do while (krr_bottom_bondi >= 1 .and. krr_bottom_bondi < nz .and. s% r(krr_bottom_bondi) >= Orbital_separation-R_bondi)
              krr_bottom_bondi = krr_bottom_bondi + 1
          end do
          krr_center = krr_bottom_bondi
-         do while (krr_center >=2 .and. s% r(krr_center) < r_engulf)
+         do while (krr_center >=2 .and. s% r(krr_center) < Orbital_separation)
             krr_center = krr_center - 1
          end do
          krr_top_bondi = krr_center
-         do while (krr_top_bondi >= 2 .and. s% r(krr_top_bondi) < r_engulf+R_bondi)
+         do while (krr_top_bondi >= 2 .and. s% r(krr_top_bondi) < Orbital_separation+R_bondi)
              krr_top_bondi = krr_top_bondi - 1
          end do
 
@@ -208,26 +208,26 @@
         area = 0d0 ! Initialize cross section of companion (physical of Bondi) for calculating aerodynamic or gravitational drag
 
       ! Do the calculation only if this is a grazing collision and if the planet has not been destroyed yet
-        if (r_engulf > s% r(1) + r_influence) then
+        if (Orbital_separation > s% r(1) + R_influence) then
             penetration_depth = 0.d0
         else
-            penetration_depth = penetration_depth_function(r_influence,s% r(1), r_engulf)
+            penetration_depth = penetration_depth_function(R_influence,s% r(1), Orbital_separation)
         endif
 
 
-        if (penetration_depth >= 0.0 .and. (r_engulf >= (s% r(1) - r_influence)) .and. (f_disruption <= 1d0)) then
+        if (penetration_depth >= 0.0 .and. (Orbital_separation >= (s% r(1) - R_influence)) .and. (f_disruption <= 1d0)) then
             ! Calculate intersected area. Rstar-rr is x in sketch
-              area = intercepted_area (penetration_depth, r_influence)
-              write(*,*) 'Grazing Collision. Engulfed area fraction: ', s% model_number, area/(pi * pow2(r_influence))
+              area = intercepted_area (penetration_depth, R_influence)
+              write(*,*) 'Grazing Collision. Engulfed area fraction: ', s% model_number, area/(pi * pow2(R_influence))
         else
             ! Full engulfment. Cross section area = Planet area
-              area = pi * pow2(r_influence)
-              write(*,*) 'Full engulfment. r_influence, area',s% model_number,r_influence/Rsun,area
+              area = pi * pow2(R_influence)
+              write(*,*) 'Full engulfment. R_influence, area',s% model_number,R_influence/Rsun,area
         end if
 
       !  write(*,'(a,i5,4f11.6,3e14.5)') &
-      !          'r_engulf, R_bondi, r_influence, penetration depth, rho_bar_bondi, rho_bar_companion, area ',&
-      !           s% model_number, r_engulf/Rsun, R_bondi/Rsun, r_influence/Rsun, &
+      !          'Orbital_separation, R_bondi, R_influence, penetration depth, rho_bar_bondi, rho_bar_companion, area ',&
+      !           s% model_number, Orbital_separation/Rsun, R_bondi/Rsun, R_influence/Rsun, &
       !           penetration_depth/Rsun, rho_bar_bondi, rho_bar_companion, area
 
 
@@ -236,9 +236,9 @@
         if ( f_disruption <= 1d0 ) then
 
             ! Note we use s% r(krr_bottom)+R_companion instead of s% r(krr_center) because during grazing phase krr_center = krr_bottom
-              call drag (s% m(krr_center), M_companion, area, rho_bar_drag, s% dt, r_engulf, de, Deltar)
+              call drag (s% m(krr_center), M_companion, area, rho_bar_drag, s% dt, Orbital_separation, de, Deltar)
             !  write(*,'(A,i4,2f10.4,2e15.4,f12.4,e12.4,e12.4)')'after call drag', s% model_number, s% m(krr_center)/Msun, &
-						!		       area, rho_bar_drag, s% dt, r_engulf/Rsun, de, Deltar/Rsun
+						!		       area, rho_bar_drag, s% dt, Orbital_separation/Rsun, de, Deltar/Rsun
 
             ! If the planet has not been destroyed by ram pressure, deposit drag luminosity and heat the envelope
             ! Spread in the region occupied by the planet or by the Bondi sphere.
@@ -248,10 +248,10 @@
               end do
 
               ! Calculate orbital energy
-              call orbital_energy(s% m(krr_center), M_companion, r_engulf, e_orbit)
+              call orbital_energy(s% m(krr_center), M_companion, Orbital_separation, e_orbit)
               write(*,*) 'Injected Energy / Orbital Energy: ', abs(de/e_orbit)
         else
-              write(*,*) '***************** Planet destroyed at R/Rsun = ', r_engulf/Rsun,'*********************'
+              write(*,*) '***************** Planet destroyed at R/Rsun = ', Orbital_separation/Rsun,'*********************'
               Deltar = 0d0
               s% use_other_energy = .false.
               stop_age = s% star_age + 1d1 * s% kh_timescale
@@ -343,7 +343,7 @@
 
     ! Calculate 2D Intercepted area of planet grazing host star noting that the radius is not
     ! necessarily the radius of the planet, it could be the Bondi radius if it is larger.
-    ! R_companion = max (planet radius, Bondi radius), x = Rstar-r_engulf (see sketch)
+    ! R_companion = max (planet radius, Bondi radius), x = Rstar-Orbital_separation (see sketch)
       real(dp) function intercepted_area(x, R_inf) result(area)
            real(dp), intent(in) :: x, R_inf
            real(dp) :: alpha, y
@@ -363,11 +363,12 @@
            endif
       end function intercepted_area
 
-      real(dp) function penetration_depth_function(r_influence, R_star, r_engulf) result(penetration_depth)
-           real(dp) :: r_influence, R_star, r_engulf
-           penetration_depth = r_influence + R_star - r_engulf
+      real(dp) function penetration_depth_function(R_influence, R_star, Orbital_separation) result(penetration_depth)
+           real(dp) :: R_influence, R_star, Orbital_separation
+           penetration_depth = R_influence + R_star - Orbital_separation
            if (penetration_depth < 0d0) penetration_depth = 0d0
-           write(*,*)'From penetration_depth, r_influence,r_engulf,penetration_depth',r_influence,r_engulf,penetration_depth
+           write(*,*)'From penetration_depth, R_influence,Orbital_separation,penetration_depth' &
+           ,R_influence,Orbital_separation,penetration_depth
       end function penetration_depth_function
 
       real(dp) function check_disruption(M_companion,R_companion,v_planet,rho_ambient) result(f)
@@ -388,7 +389,7 @@
          integer, intent(in) :: id
          logical, intent(in) :: restart
          integer, intent(out) :: ierr
-         real(dp) :: v_kepler, sound_speed, r_influence, r_engulf_prior
+         real(dp) :: v_kepler, sound_speed, R_influence, Orbital_separation_prior
          type (star_info), pointer :: s
 
          ierr = 0
@@ -398,38 +399,18 @@
          extras_startup = 0
 
          if (.not. restart) then
-
-         ! Estimate of Keplerian velocity based on separation = stellar radius + r_influence
-         ! The loop is because initial value of r_engulf needs r_influence, which needs R_bondi, which needs
-         ! v_kepler, which needs r_engulf
-
-           r_engulf = s% r(1)
-           r_engulf_prior = s% r(1) * 0.9d0
+           Orbital_separation = s% x_ctrl(6)*Rsun
            sound_speed = 10. * 1.d5 ! set c_sound to be ISM in cgs
-           do while ((r_engulf - r_engulf_prior)/r_engulf > 0.001)
-             call orbital_velocity(s% m(1), r_engulf, v_kepler)
-             call bondi_radius (s% x_ctrl(1)*Msun, sound_speed, v_kepler, R_bondi)
-             r_influence = max(R_bondi, s% x_ctrl(2)*Rsun)
-             r_engulf_prior = r_engulf
-             r_engulf = s% r(1) + r_influence
-             write(*,*)'From INIT loop',r_engulf/Rsun,R_bondi/Rsun,r_engulf_prior/Rsun,&
-                r_influence/Rsun,(r_engulf - r_engulf_prior)/r_engulf,v_kepler/1.d5
-           end do
-
-
-         ! If this is not a restart, set the collision radius as the stellar radius at the beginning of calculation + companion radius OR Bondi radius
-         ! whichever is the largest, aka a grazing collision (r_engulf is the coordinate of the planet's centre)
-           r_engulf = s% r(1) + r_influence
-           write(*,*)'From STARTUP this is r_engulf, Rstar, Rbondi, Rcompanion', &
-                      r_engulf/Rsun, s% r(1)/Rsun, R_bondi/Rsun, s% x_ctrl(2)
+           call orbital_velocity(s% m(1), Orbital_separation, v_kepler)
+           call bondi_radius (s% x_ctrl(1)*Msun, sound_speed, v_kepler, R_bondi)
+           R_influence = max(R_bondi, s% x_ctrl(2)*Rsun)
            stop_age = -101d0
            call alloc_extra_info(s)
-         else ! it is a restart -> Unpack value of r_engulf from photo
+         else ! it is a restart -> Unpack value of Orbital_separation from photo
             call unpack_extra_info(s)
-            !ORSOLA I want to restart after destruction, so I want to eliminate the stop time.
-            !stop_age = -101d0
          end if
-         write(*,*)'Inside STARTUP: r_engulf, R_companion, Bondi R:', r_engulf/Rsun, s% x_ctrl(2), R_bondi/Rsun
+
+
       end function extras_startup
 
 
@@ -489,7 +470,7 @@
          call star_ptr(id, s, ierr)
          if (ierr /= 0) return
 
-         names(1) = 'R_Engulfed_Planet' ! Radial distance from stellar center of engulfed planet
+         names(1) = 'Orbital_separation' ! Radial distance from stellar center of engulfed planet
          names(2) = 'Orbital_velocity' ! v_kepler
          names(3) = 'Log_Infall_distance'  ! dr
          names(4) = 'Log_Injected_energy'  ! de=dl*dt
@@ -501,7 +482,7 @@
          names(10) = 'Bondi_radius'
          names(11) = 'Sound_speed'
          names(12) = 'Tidal_timescale' ! In years
-         vals(1) = r_engulf / Rsun
+         vals(1) = Orbital_separation / Rsun
          vals(2) = s% xtra1                 ! Orbital velocity
          vals(3) = safe_log10_cr( s% xtra2) ! Infall distance
          vals(4) = safe_log10_cr( s% xtra3) ! Injected energy
@@ -612,7 +593,7 @@
          integer, intent(in) :: id, id_extra
          integer :: ierr, k
          logical :: grazing_phase
-         real(dp) :: dr, delta_e, area, energy, r_influence, penetration_depth, dr_next
+         real(dp) :: dr, delta_e, area, energy, R_influence, penetration_depth, dr_next
          real(dp) :: v_kepler
          type (star_info), pointer :: s
          ierr = 0
@@ -622,30 +603,33 @@
          call store_extra_info(s)
 
        ! Update the radial coordinate of the engulfed companion
-         r_engulf = max(r_engulf-Deltar, 0d0)
+         Orbital_separation = max(Orbital_separation-Deltar-Deltar_tides, 0d0)
 
-       ! CALCULATE r_influence AGAIN as it is not available to this part of the code
+       ! CALCULATE R_influence AGAIN as it is not available to this part of the code
        ! But before we need bondi radius and orbital velocity.
        ! Calculate approx gridpoint location of planet center
+
+
          k=1
-         do while (s% r(k) > r_engulf)
+         do while (s% r(k) > Orbital_separation)
             k=k+1
          end do
-         call orbital_velocity(s% m(1), r_engulf, v_kepler)
+
+         call orbital_velocity(s% m(1), Orbital_separation, v_kepler)
          call bondi_radius (s% x_ctrl(1)*Msun, s% csound(k), v_kepler, R_bondi)
-         r_influence = max(R_bondi,s% x_ctrl(2)*Rsun)
-        ! write(*,*)'From early',r_engulf/Rsun, Deltar/Rsun, r_influence/Rsun,R_bondi/Rsun
+         R_influence = max(R_bondi,s% x_ctrl(2)*Rsun)
+        ! write(*,*)'From early',Orbital_separation/Rsun, Deltar/Rsun, R_influence/Rsun,R_bondi/Rsun
 
        ! Stop the run if: 1) we are at or past the stop age, but only if it has been set (default value is -101d0)
-       !                  2) r_engulf is smaller than inlist-provided stop point x_ctrl(3) in Rsun or if
-       !                  2B) r_engulf has become smaller than the companion radius or Bondi Radius, whichever is largest
+       !                  2) Orbital_separation is smaller than inlist-provided stop point x_ctrl(3) in Rsun or if
+       !                  2B) Orbital_separation has become smaller than the companion radius or Bondi Radius, whichever is largest
          if (stop_age .GT. 0d0 .AND. s% star_age .GT. stop_age) then
            write(*,*) "Star should be thermally relaxed. Stopping."
            extras_finish_step = terminate
          endif
-         if (r_engulf < r_influence .or. r_engulf < s% x_ctrl(3)*Rsun) then
-          ! write(*,'(A,f10.4,A,f10.4,A,f10.4)') "Reached stop point from inlist. r_engulf=", r_engulf/Rsun, &
-          !                                      'r_influence=',r_influence/Rsun, 'inslist stop:',s% x_ctrl(3)
+         if (Orbital_separation < R_influence .or. Orbital_separation < s% x_ctrl(3)*Rsun) then
+          ! write(*,'(A,f10.4,A,f10.4,A,f10.4)') "Reached stop point from inlist. Orbital_separation=", Orbital_separation/Rsun, &
+          !                                      'R_influence=',R_influence/Rsun, 'inslist stop:',s% x_ctrl(3)
            !extras_finish_step = terminate
            s% use_other_energy = .false.
            stop_age = s% star_age + 1d1 * s% kh_timescale
@@ -662,19 +646,19 @@
          !write(*,*)'grazer outside if f_disruption, Deltar',s% model_number,s% xtra4,Deltar/Rsun
          if (s% xtra4 < 1d0 .and. Deltar >= 0d0) then
          ! Calculate predicted dr in two cases: grazing phase and full engulfment
-           penetration_depth = penetration_depth_function(r_influence,s% r(1), r_engulf)
-           !write(*,*)'From outside grazer',s% model_number,r_influence/Rsun,(r_influence + s% r(1) - r_engulf)/Rsun,&
-          !               penetration_depth/Rsun, r_influence/Rsun,s% r(1)/Rsun,r_engulf/Rsun
-           if (penetration_depth <= 2d0*r_influence) then
-              area = intercepted_area (penetration_depth, r_influence)
+           penetration_depth = penetration_depth_function(R_influence,s% r(1), Orbital_separation)
+           !write(*,*)'From outside grazer',s% model_number,R_influence/Rsun,(R_influence + s% r(1) - Orbital_separation)/Rsun,&
+          !               penetration_depth/Rsun, R_influence/Rsun,s% r(1)/Rsun,Orbital_separation/Rsun
+           if (penetration_depth <= 2d0*R_influence) then
+              area = intercepted_area (penetration_depth, R_influence)
               grazing_phase = .true.
-          !  write(*,*)'From grazer 1: r_infl, r_engulf-r_infl,Rstar,penetration,Deltar', &
-          !              s% model_number,r_influence/Rsun,(r_engulf-r_influence)/Rsun,s% r(1)/Rsun, &
+          !  write(*,*)'From grazer 1: r_infl, Orbital_separation-r_infl,Rstar,penetration,Deltar', &
+          !              s% model_number,R_influence/Rsun,(Orbital_separation-R_influence)/Rsun,s% r(1)/Rsun, &
           !              penetration_depth/Rsun, Deltar/Rsun
            else
-              area = pi * pow2(r_influence)
-            !  write(*,*)'From grazer 2: r_infl, r_engulf-r_infl,Rstar,penetration,Deltar', &
-            !            s% model_number,r_influence/Rsun,(r_engulf-r_influence)/Rsun,s% r(1)/Rsun, &
+              area = pi * pow2(R_influence)
+            !  write(*,*)'From grazer 2: r_infl, Orbital_separation-r_infl,Rstar,penetration,Deltar', &
+            !            s% model_number,R_influence/Rsun,(Orbital_separation-R_influence)/Rsun,s% r(1)/Rsun, &
             !            penetration_depth/Rsun, Deltar/Rsun
            end if
 
@@ -685,19 +669,19 @@
           !      s% model_number,s% m(k)/Msun,area,s% rho(k),s% dt_next,s% r(k)/Rsun,delta_e,dr_next/Rsun
 
            if (grazing_phase) then                       ! Grazing Phase (requires small dr)
-             do while (dr_next/r_influence > s% x_ctrl(4))
+             do while (dr_next/R_influence > s% x_ctrl(4))
                s% dt_next = s% dt_next/2d0               ! There are better strategies, but this is simple enough
                call drag (s% m(k), s% x_ctrl(1)*Msun,area,s% rho(k),s% dt_next,s% r(k),delta_e,dr_next)
                write(*,*) s% model_number,&
-                         'Grazing dr/r_influence too large: ', dr_next/r_influence,'Decreasing timestep to ', s% dt_next
+                         'Grazing dr/R_influence too large: ', dr_next/R_influence,'Decreasing timestep to ', s% dt_next
              end do
            else
-             do while (dr_next/r_influence > s% x_ctrl(5))   ! or Full Engulfment (allow for larger dr)
+             do while (dr_next/R_influence > s% x_ctrl(5))   ! or Full Engulfment (allow for larger dr)
                s% dt_next = s% dt_next/2d0
                call drag (s% m(k), s% x_ctrl(1)*Msun,area,s% rho(k),s% dt_next,s% r(k),delta_e,dr_next)
                write(*,*) s% model_number,&
                          ! 'Engulfed dr/r_p too large: ', dr/(max(R_bondi,s% x_ctrl(2) * Rsun)),'Decreasing timestep to ', s% dt_next
-                         'Engulfed dr/r_influence too large: ', dr_next/r_influence,'Decreasing timestep to ', s% dt_next
+                         'Engulfed dr/R_influence too large: ', dr_next/R_influence,'Decreasing timestep to ', s% dt_next
              end do
            end if
          end if
@@ -769,9 +753,9 @@
 
          i = 0
          ! call move_dbl
-         ! (TAs) Important to understand what this is and what is done here. This is essential for MESA to remember r_engulf between timesteps
+         ! (TAs) Important to understand what this is and what is done here. This is essential for MESA to remember Orbital_separation between timesteps
          ! and to allow for restarts from photos
-         call move_dbl(r_engulf)
+         call move_dbl(Orbital_separation)
          call move_dbl(stop_age)
          num_dbls = i
 
