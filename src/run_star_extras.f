@@ -117,15 +117,14 @@
         M_companion = s% x_ctrl(1) * Msun
         R_companion = s% x_ctrl(2) * Rsun
 
+      ! Calculate tidal timescale (according to Hansen et al. 2010, which uses Hut formalism)
+      ! IMPROVE: Calculate appropriate timescale for when Orbital_separation < R_star
         call tidal_timescale(s% m(1), M_companion, s% r(1), R_companion, Orbital_separation, t_tide)
         Deltar_tides = (s% dt/t_tide) * Orbital_separation
-        write(*,*) 'Tidal Timescale (yrs): ',t_tide/secyer, 'Tidal Da (Rsun): ', Deltar_tides/Rsun
+      !  write(*,*) 'Tidal Timescale (yrs): ',t_tide/secyer, 'Tidal Da (Rsun): ', Deltar_tides/Rsun
 
       ! Orbital_separation is the coordinate of the planet's center wrt the primary's core.
-      ! If this is the beginning of an engulfment run, Orbital_separation is set to be the radius
-      ! of the star in 'extras_startup' plus either the radius of the companion or the bondi readius, whichever is
-      ! largest, so as to initialize a grazing collision.
-      ! If it's a restart, MESA will remember the radial location of the engulfed
+      ! If it's a restart, MESA will remember the radial location of the
       ! companion, Orbital_separation, from a photo. This is because we are moving Orbital_separation data in
       ! photos using 'move_extra_info' and this data is retrieved in 'extras_startup' using 'unpack_extra_info'
 
@@ -218,11 +217,11 @@
         if (penetration_depth >= 0.0 .and. (Orbital_separation >= (s% r(1) - R_influence)) .and. (f_disruption <= 1d0)) then
             ! Calculate intersected area. Rstar-rr is x in sketch
               area = intercepted_area (penetration_depth, R_influence)
-              write(*,*) 'Grazing Collision. Engulfed area fraction: ', s% model_number, area/(pi * pow2(R_influence))
+            !  write(*,*) 'Grazing Collision. Engulfed area fraction: ', s% model_number, area/(pi * pow2(R_influence))
         else
             ! Full engulfment. Cross section area = Planet area
               area = pi * pow2(R_influence)
-              write(*,*) 'Full engulfment. R_influence, area',s% model_number,R_influence/Rsun,area
+            !  write(*,*) 'Full engulfment. R_influence, area',s% model_number,R_influence/Rsun,area
         end if
 
       !  write(*,'(a,i5,4f11.6,3e14.5)') &
@@ -249,7 +248,7 @@
 
               ! Calculate orbital energy
               call orbital_energy(s% m(krr_center), M_companion, Orbital_separation, e_orbit)
-              write(*,*) 'Injected Energy / Orbital Energy: ', abs(de/e_orbit)
+            !  write(*,*) 'Injected Energy / Orbital Energy: ', abs(de/e_orbit)
         else
               write(*,*) '***************** Planet destroyed at R/Rsun = ', Orbital_separation/Rsun,'*********************'
               Deltar = 0d0
@@ -367,8 +366,8 @@
            real(dp) :: R_influence, R_star, Orbital_separation
            penetration_depth = R_influence + R_star - Orbital_separation
            if (penetration_depth < 0d0) penetration_depth = 0d0
-           write(*,*)'From penetration_depth, R_influence,Orbital_separation,penetration_depth' &
-           ,R_influence,Orbital_separation,penetration_depth
+          ! write(*,*)'From penetration_depth, R_influence,Orbital_separation,penetration_depth' &
+          ! ,R_influence,Orbital_separation,penetration_depth
       end function penetration_depth_function
 
       real(dp) function check_disruption(M_companion,R_companion,v_planet,rho_ambient) result(f)
@@ -380,8 +379,8 @@
            v_esc_planet_square = standard_cgrav*M_companion/R_companion
          ! Eq.5 in Jia & Spruit 2018  https://arxiv.org/abs/1808.00467
            f = (rho_ambient*pow2(v_planet)) / (rho_planet*v_esc_planet_square)
-           write(*,*)'From Check_Disruption rho_ambient, rho_planet, v_planet, f', &
-                     rho_ambient, rho_planet, v_planet, f
+          ! write(*,*)'From Check_Disruption rho_ambient, rho_planet, v_planet, f', &
+          !           rho_ambient, rho_planet, v_planet, f
       end function check_disruption
 
 
@@ -684,7 +683,8 @@
                s% dt_next = s% dt_next/2d0               ! There are better strategies, but this is simple enough
                call drag (s% m(k), s% x_ctrl(1)*Msun,area,s% rho(k),s% dt_next,s% r(k),delta_e,dr_next)
                write(*,*) s% model_number,&
-                         'GRAZING ENGULFMENT SETTING DTNEXT: dr/R_influence too large: ', dr_next/R_influence,'Decreasing dt to ', s% dt_next
+                         'GRAZING ENGULFMENT SETTING DTNEXT: dr/R_influence too large: ' &
+                         , dr_next/R_influence,'Decreasing dt to ', s% dt_next
              end do
            else
              do while (dr_next/R_influence > s% x_ctrl(5))   ! or Full Engulfment (allow for larger dr)
@@ -692,7 +692,8 @@
                call drag (s% m(k), s% x_ctrl(1)*Msun,area,s% rho(k),s% dt_next,s% r(k),delta_e,dr_next)
                write(*,*) s% model_number,&
                          ! 'Engulfed dr/r_p too large: ', dr/(max(R_bondi,s% x_ctrl(2) * Rsun)),'Decreasing timestep to ', s% dt_next
-                         'ENGULFMENT SETTING DTNEXT: dr/R_influence too large: ', dr_next/R_influence,'Decreasing dt to ', s% dt_next
+                         'ENGULFMENT SETTING DTNEXT: dr/R_influence too large: ' &
+                         , dr_next/R_influence,'Decreasing dt to ', s% dt_next
              end do
            end if
          end if
