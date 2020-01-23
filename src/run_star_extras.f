@@ -270,6 +270,7 @@
           s% xtra6 = dmsum_drag/Msun             ! Heated mass (Msun)
           s% xtra7 = R_bondi/Rsun                ! Bondi radius (Rsun)
           s% xtra8 = sound_speed/1.d5            ! Sound speed (km/s)
+          s% xtra9 = t_tide/secyer
 
       end subroutine energy_routine
 
@@ -474,7 +475,7 @@
          ierr = 0
          call star_ptr(id, s, ierr)
          if (ierr /= 0) return
-         how_many_extra_history_columns = 11
+         how_many_extra_history_columns = 12
       end function how_many_extra_history_columns
 
 
@@ -499,6 +500,7 @@
          names(9) = 'Planet_radius'
          names(10) = 'Bondi_radius'
          names(11) = 'Sound_speed'
+         names(12) = 'Tidal_timescale' ! In years
          vals(1) = r_engulf / Rsun
          vals(2) = s% xtra1                 ! Orbital velocity
          vals(3) = safe_log10_cr( s% xtra2) ! Infall distance
@@ -510,6 +512,7 @@
          vals(9) = s% x_ctrl(2)
          vals(10) = s% xtra7
          vals(11) = s% xtra8
+         vals(12) = s% xtra9
          ! note: do NOT add the extras names to history_columns.list
          ! the history_columns.list is only for the built-in log column options.
          ! it must not include the new column names you are adding here.
