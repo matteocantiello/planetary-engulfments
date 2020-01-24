@@ -117,11 +117,6 @@
         M_companion = s% x_ctrl(1) * Msun
         R_companion = s% x_ctrl(2) * Rsun
 
-      ! Calculate tidal timescale (according to Hansen et al. 2010, which uses Hut formalism)
-      ! IMPROVE: Calculate appropriate timescale for when Orbital_separation < R_star
-        call tidal_timescale(s% m(1), M_companion, s% r(1), R_companion, Orbital_separation, t_tide)
-        Deltar_tides = (s% dt/t_tide) * Orbital_separation
-      !  write(*,*) 'Tidal Timescale (yrs): ',t_tide/secyer, 'Tidal Da (Rsun): ', Deltar_tides/Rsun
 
       ! Orbital_separation is the coordinate of the planet's center wrt the primary's core.
       ! If it's a restart, MESA will remember the radial location of the
@@ -257,6 +252,18 @@
               write(*,*)'stop_age and KH timescale are',stop_age, s% kh_timescale
         endif
 
+        !########################### TIDES ######################################
+
+        ! Calculate tidal timescale (according to Hansen et al. 2010, which uses Hut formalism)
+        ! When Orbital_separation < R_star we assume that only the mass and radius of the star within the orbital separation play a role
+        if (s% x_ctrl(8) > 0.0) then
+          call tidal_timescale(s% m(krr_center), M_companion, s% r(krr_center), &
+           R_companion, Orbital_separation, s% x_ctrl(8), t_tide)
+          Deltar_tides = (s% dt/t_tide) * Orbital_separation
+        else
+          Deltar_tides = 0.0
+        end if
+      ! write(*,*) 'Tidal Timescale (yrs): ',t_tide/secyer, 'Tidal Da (Rsun): ', Deltar_tides/Rsun, s% dt
 
 
         ! Save variables for history
@@ -304,14 +311,13 @@
       ! Calculate tidal timescale
       ! This is a derivative of the equilibrium tide model of Hut 1981 formulated by Eggleton + 1998 (EKH)
       ! In particular we use equation (5) from Hansen et al. 2010
-        subroutine tidal_timescale(m1, m2, r1, r2, a, t_tide)
-             real(dp), intent(in)  :: m1, m2, r1, r2, a
+        subroutine tidal_timescale(m1, m2, r1, r2, a, sigma_calibration, t_tide)
+             real(dp), intent(in)  :: m1, m2, r1, r2, a, sigma_calibration
              real(dp), intent(out) :: t_tide
-             real(dp) :: sigma, sigma_calibration
+             real(dp) :: sigma
            ! use const_def, only: standard_cgrav
-            sigma_calibration = 7.8d-8  ! Calibrated dissipation constant (Hansen et al. 2010)
+            ! sigma_calibration = 7.8d-8  ! Calibrated dissipation constant (Hansen et al. 2010)
             sigma = 6.4d-59 * sigma_calibration ! Dimensional Scaling for dissipation constant (Hansen et al. 2010)
-
             t_tide = (m1/9.0)/((m1+m2)*m2) * (a**8.0 / r1**10) / sigma
             ! write(*,*) '(m1/9.0)/((m1+m2)*m2)' , t_tide
         end subroutine tidal_timescale
@@ -594,6 +600,7 @@
          logical :: grazing_phase
          real(dp) :: dr, delta_e, area, energy, R_influence, penetration_depth, dr_next
          real(dp) :: v_kepler
+         character (len=90) :: fmt
          type (star_info), pointer :: s
          ierr = 0
          call star_ptr(id, s, ierr)
@@ -602,9 +609,10 @@
          call store_extra_info(s)
 
        ! Update the radial coordinate of the engulfed companion
-       if (s% use_other_energy) then
+       if ((.not. s% doing_first_model_of_run) .and. s% use_other_energy ) then
          Orbital_separation = max(Orbital_separation-Deltar-Deltar_tides, 0d0)
        end if
+
 
        ! Decrease timestep to fill da_tides/a tolerance
        ! write(*,*) 'Tff: ', s% xtra9, 'Tolerance: ',s% x_ctrl(7) , 'Orbital Sep: ',Orbital_separation
@@ -698,6 +706,23 @@
            end if
          end if
 
+         ! #################### PRINT OUT #######################################
+         fmt = '(f11.2,f11.3,f11.3,f11.3,f11.3,f11.3,f11.3)'
+         fmt=trim(fmt)
+
+         write(*,'(a)') &
+            '_______________________________________________________________________' // &
+            '___________________________________________________________________________'
+         write(*,*)
+         write(*,'(a)') &
+            '   a (rsun)      t_tide    Dr_drag   Dr_tides  &
+             R_influence   R_Bondi   R_Star  '
+
+        write(*,fmt=fmt) Orbital_separation/Rsun, s% xtra9, Deltar/Rsun,&
+         Deltar_tides/Rsun, R_influence/Rsun,R_bondi/Rsun,s% r(1)/Rsun
+         write(*,'(a)') &
+            '_______________________________________________________________________' // &
+            '___________________________________________________________________________'
 
          ! to save a profile,
             ! s% need_to_save_profiles_now = .true.
