@@ -262,6 +262,7 @@
           Deltar_tides = (s% dt/t_tide) * Orbital_separation
         else
           Deltar_tides = 0.0
+          t_tide = 0.0 ! This should be +inf
         end if
       ! write(*,*) 'Tidal Timescale (yrs): ',t_tide/secyer, 'Tidal Da (Rsun): ', Deltar_tides/Rsun, s% dt
 
@@ -269,14 +270,15 @@
         ! Save variables for history
 
           s% xtra1 = v_kepler/1d5                ! Orbital velocity
-          s% xtra2 = Deltar                      ! Infall distance
+          s% xtra2 = Deltar                      ! Infall distance due to drag
           s% xtra3 = de                          ! Injected energy
           s% xtra4 = f_disruption                ! Disruption factor
           s% xtra5 = area/(pi * pow2(max(R_companion,R_bondi)))  ! Engulfed fraction
           s% xtra6 = dmsum_drag/Msun             ! Heated mass (Msun)
           s% xtra7 = R_bondi/Rsun                ! Bondi radius (Rsun)
           s% xtra8 = sound_speed/1.d5            ! Sound speed (km/s)
-          s% xtra9 = t_tide/secyer
+          s% xtra9 = t_tide/secyer               ! Tidal timescale (yrs)
+          s% xtra10 = Deltar_tides               ! Infall distance due to tides
 
       end subroutine energy_routine
 
@@ -461,7 +463,7 @@
          ierr = 0
          call star_ptr(id, s, ierr)
          if (ierr /= 0) return
-         how_many_extra_history_columns = 12
+         how_many_extra_history_columns = 13
       end function how_many_extra_history_columns
 
 
@@ -487,6 +489,7 @@
          names(10) = 'Bondi_radius'
          names(11) = 'Sound_speed'
          names(12) = 'Tidal_timescale' ! In years
+         names(13) = 'Log_Infall_distance_tides' ! dr_tides
          vals(1) = Orbital_separation / Rsun
          vals(2) = s% xtra1                 ! Orbital velocity
          vals(3) = safe_log10_cr( s% xtra2) ! Infall distance
@@ -499,6 +502,7 @@
          vals(10) = s% xtra7
          vals(11) = s% xtra8
          vals(12) = s% xtra9
+         vals(13) = safe_log10_cr( s% xtra10)
          ! note: do NOT add the extras names to history_columns.list
          ! the history_columns.list is only for the built-in log column options.
          ! it must not include the new column names you are adding here.
@@ -619,9 +623,9 @@
        !write(*,*) 'Deltar_tides/Orbital_separation',Deltar_tides/Orbital_separation,'Tolerance', s% x_ctrl(7)
        !write(*,*) 'Dt, Dt_next', s% dt, s% dt_next
        ! write(*,*) ' Deltar_tides/Orbital_separation > tolerance (Bad if > 1)', Deltar_tides/Orbital_separation, s% x_ctrl(7)
-       if (Deltar_tides/Orbital_separation >= s% x_ctrl(7)) then
+       if ((Deltar_tides/Orbital_separation >= s% x_ctrl(7)) .and. s% xtra9 > 0.0 .and. s% use_other_energy) then
           s% dt_next = s% x_ctrl(7)* secyer * s% xtra9  ! Dt = tolerance * t_tide
-          write(*,*) 'TIDES SETTING DTNEXT: ', s% x_ctrl(7), s% xtra9, s% dt_next
+          write(*,*) 'TIDES SETTING NEXT TIMESTEP: ', s% x_ctrl(7), s% xtra9, s% dt_next
        end if
        ! CALCULATE R_influence AGAIN as it is not available to this part of the code
        ! But before we need bondi radius and orbital velocity.
@@ -649,7 +653,7 @@
           ! write(*,'(A,f10.4,A,f10.4,A,f10.4)') "Reached stop point from inlist. Orbital_separation=", Orbital_separation/Rsun, &
           !                                      'R_influence=',R_influence/Rsun, 'inslist stop:',s% x_ctrl(3)
            !extras_finish_step = terminate
-           s% use_other_energy = .false. ! This also stops the tidal orbital evolution, since that's
+           s% use_other_energy = .false. ! This also stops the tidal orbital evolution
            stop_age = s% star_age + 1d1 * s% kh_timescale
          endif
 

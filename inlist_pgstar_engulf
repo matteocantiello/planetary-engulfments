@@ -20,7 +20,7 @@
          Grid2_file_flag = .true.
          Grid2_file_dir = 'png'
          Grid2_file_prefix = 'Grid2'
-         Grid2_file_interval = 1
+         Grid2_file_interval = 10
 
          Grid2_file_width = 14
 
@@ -89,7 +89,7 @@
 	 Text_Summary1_name(:,:) = ''
 
 	 Text_Summary1_name(1,1) = 'time_step'
-	 Text_Summary1_name(1,2) = 'Log_Infall_distance'
+	 Text_Summary1_name(1,2) = 'photosphere_L'
 	 Text_Summary1_name(1,3) = 'star_mass'
 	 Text_Summary1_name(1,4) = 'Log_Destruction_factor'
 
@@ -104,8 +104,8 @@
 	 Text_Summary1_name(3,3) = 'Planet_radius'
 
          Text_Summary1_name(4,1) = 'model_number'
-         Text_Summary1_name(4,4) = 'photosphere_L'
-         Text_Summary1_name(4,3) = 'photosphere_r'
+         Text_Summary1_name(4,4) = 'Log_Infall_distance'
+         Text_Summary1_name(4,3) = 'Log_Infall_distance_tides'
          Text_Summary1_name(4,2) = 'Orbital_separation'
 
 
@@ -152,15 +152,15 @@
         History_Panels1_other_dymin(2) = -1
 
 
-        History_Panels1_yaxis_name(3) = 'Orbital_velocity'
+        History_Panels1_yaxis_name(3) = 'Log_Infall_distance'
         History_Panels1_yaxis_reversed(3) = .false.
-        History_Panels1_ymin(3) = -101d0
-        History_Panels1_ymax(3) = -101d0
+        History_Panels1_ymin(3) = 3
+        History_Panels1_ymax(3) = 9
         History_Panels1_dymin(3) = -1
-        History_Panels1_other_yaxis_name(3) = 'Tidal_timescale'
+        History_Panels1_other_yaxis_name(3) = 'Log_Infall_distance_tides'
         History_Panels1_other_yaxis_reversed(3) = .false.
-        History_Panels1_other_ymin(3) = -101d0
-        History_Panels1_other_ymax(3) = -101d0
+        History_Panels1_other_ymin(3) = 3
+        History_Panels1_other_ymax(3) = 9
         History_Panels1_other_dymin(3) = -1
 
         History_Panels1_yaxis_name(4) = 'log_L'
@@ -168,7 +168,7 @@
         History_Panels1_ymin(4) = -101d0
         History_Panels1_ymax(4) = -101d0
         History_Panels1_dymin(4) = -1
-        History_Panels1_other_yaxis_name(4) = 'Log_Infall_distance'
+        History_Panels1_other_yaxis_name(4) = 'Orbital_velocity'
         History_Panels1_other_yaxis_reversed(4) = .false.
         History_Panels1_other_ymin(4) = -101d0
         History_Panels1_other_ymax(4) = -101d0
