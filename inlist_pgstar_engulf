@@ -154,13 +154,13 @@
 
         History_Panels1_yaxis_name(3) = 'Log_Infall_distance'
         History_Panels1_yaxis_reversed(3) = .false.
-        History_Panels1_ymin(3) = 3
-        History_Panels1_ymax(3) = 9
+        History_Panels1_ymin(3) = 2
+        History_Panels1_ymax(3) = 8
         History_Panels1_dymin(3) = -1
         History_Panels1_other_yaxis_name(3) = 'Log_Infall_distance_tides'
         History_Panels1_other_yaxis_reversed(3) = .false.
-        History_Panels1_other_ymin(3) = 3
-        History_Panels1_other_ymax(3) = 9
+        History_Panels1_other_ymin(3) = 2
+        History_Panels1_other_ymax(3) = 8
         History_Panels1_other_dymin(3) = -1
 
         History_Panels1_yaxis_name(4) = 'log_L'
