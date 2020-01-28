@@ -32,13 +32,14 @@
     ! max_timestep = 1d10
 
      x_ctrl(1) =  0.001 ! 1.66e-7 !0.001 !0.2     ! Companion Mass (Msun) 0.001Msun ~ Mj ! Mercury mass = 0.055 Mearth , Mercury Radius = 0.38 Rearth (1.66 -7 Msun,
-     x_ctrl(2) =  0.1 ! 0.0038 ! 0.1 !0.27     ! Companion Radius (Rsun) 0.1Rsun ~ Rj
+     x_ctrl(2) =  0.1 ! 0.0038  ! 0.1 !0.27     ! Companion Radius (Rsun) 0.1Rsun ~ Rj
      x_ctrl(3) = -10 ! 10.      ! Stop point for companion (Rsun). Set to < 0 if you do not want to use.
-     x_ctrl(4) = 0.001         ! Decrese timestep during grazing phase if (dr/r_influence) > this value
-     x_ctrl(5) = 0.5           ! Decrese timestep during full engulfment if (dr/r_influence) > this value
-     x_ctrl(6) = 5           ! Initial orbital separation (a in Rsun)
-     x_ctrl(7) = 1d-4          ! Max tolerance for da/a =  (dr/Orbital_separation) due to Tides
-     x_ctrl(8) = 7.8d-8       ! Sigma Tides Efficiency (e.g. 7.8d-8 see Hansen et al. 2010), no tides if < 0.0
+     x_ctrl(4) = 0.001          ! Decrese timestep during grazing phase if (dr/r_influence) > this value
+     x_ctrl(5) = 0.5            ! Decrese timestep during full engulfment if (dr/r_influence) > this value
+     x_ctrl(6) = 5              ! Initial orbital separation (a in Rsun)
+     x_ctrl(7) = 1d-4           ! Max tolerance for da/a =  (dr/Orbital_separation) due to Tides
+     x_ctrl(8) = 7.8d-8         ! Sigma Tides Efficiency (e.g. 7.8d-8 see Hansen et al. 2010), no tides if < 0.0
+     x_logical_ctrl(1) = .false. ! If true apply tides to orbital decay also when a < R* 
 
 !     cool_wind_RGB_scheme = 'Reimers'
 !     reimers_scaling_factor = 1.0

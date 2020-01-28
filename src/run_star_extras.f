@@ -257,13 +257,20 @@
         ! Calculate tidal timescale (according to Hansen et al. 2010, which uses Hut formalism)
         ! When Orbital_separation < R_star we assume that only the mass and radius of the star within the orbital separation play a role
         if (s% x_ctrl(8) > 0.0) then
-          call tidal_timescale(s% m(krr_center), M_companion, s% r(krr_center), &
-           R_companion, Orbital_separation, s% x_ctrl(8), t_tide)
-          Deltar_tides = (s% dt/t_tide) * Orbital_separation
-        else
+            call tidal_timescale(s% m(krr_center), M_companion, s% r(krr_center), &
+             R_companion, Orbital_separation, s% x_ctrl(8), t_tide)
+            Deltar_tides = (s% dt/t_tide) * Orbital_separation
+          else
+            Deltar_tides = 0.0
+            t_tide = 0.0 ! This should be +inf
+        end if
+
+        if (.not. s% x_logical_ctrl(1) .and. Orbital_separation <= s% r(1)) then ! No tides if a<R (if s% x_logical_ctrl(1) = .false.)
           Deltar_tides = 0.0
           t_tide = 0.0 ! This should be +inf
         end if
+
+
       ! write(*,*) 'Tidal Timescale (yrs): ',t_tide/secyer, 'Tidal Da (Rsun): ', Deltar_tides/Rsun, s% dt
 
 
